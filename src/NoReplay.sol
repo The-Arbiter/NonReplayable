@@ -13,15 +13,12 @@ contract NoReplay {
   uint256 constant internal MAX_DIFFICULTY = 18446744073709551616;
 
 
-  /// @dev Returns TRUE for PoS and FALSE for PoW using OPcode 44 values
-  // We use block.difficulty as it hasn't been deprecated yet and probably won't be for some time
+  /** @dev Returns TRUE for PoS and FALSE for PoW using OPcode 44 values
+  /*  We use block.difficulty as it hasn't been deprecated yet and probably won't be for some time
+  /*  NOTE: There is a non-zero chance that PREVRANDAO < 2^64. Please see EIP-4399 for details.
+  */
   function isEthMainnet() public view returns (bool result){
-    // Return true if PREVRANDAO is being used (PoS)
-    if(block.difficulty > 18446744073709551616){ 
-      return true;
-    }
-    // Return false if DIFFICULTY is being used (PoW)
-    return false;
+    return(block.difficulty > 18446744073709551616);
   }
 
   // Only succeeds for PoS network

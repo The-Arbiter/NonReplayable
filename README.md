@@ -24,6 +24,6 @@ The probability of RANDAO value to fall into the range between 0 and 2**64 and, 
 
 ## Credits
 
-Credit to @amxx for expanding functionality from raw ETH to include ERC20, ERC721 and ERC1155 tokens. 
+Credit to [@Amxx](https://github.com/Amxx) for expanding functionality from raw ETH to include ERC20, ERC721 and ERC1155 tokens. 
 
-Credit to @PCaversaccio for the original idea - check it out [here](https://gist.github.com/pcaversaccio/87b4666b2131ad950bf9ee97573447be) and his deployed on-chain oracle for merge detection [here](https://etherscan.io/address/0x17fef0d05ffed818af08ae00bec06b65c4319618).
+Credit to [@pcaversaccio](https://github.com/pcaversaccio) for the original idea - check it out [here](https://gist.github.com/pcaversaccio/87b4666b2131ad950bf9ee97573447be) and his deployed on-chain oracle for merge detection [here](https://etherscan.io/address/0x17fef0d05ffed818af08ae00bec06b65c4319618).

@@ -271,5 +271,25 @@ contract NoReplayTest is Test {
 
     }
 
+    // Make sure that the expiry time function works
+    function testExpiryTime(address sender, uint256 amount, uint64 difficulty) external {
+
+        assumptions(sender);
+
+        // Hoax as some address
+        vm.deal(sender, amount);
+        vm.startPrank(sender);
+
+        // Set some difficulty under 2^64
+        vm.difficulty(difficulty);    
+
+        // Set the time to be more than the expiry time away
+        vm.warp(block.timestamp + 180 days + 1);   
+        
+        vm.expectRevert(abi.encodeWithSignature("ContractExpired()"));
+        noReplay.sendEtherOnPoW{value: amount}(sender);
+
+    }
+
        
 }

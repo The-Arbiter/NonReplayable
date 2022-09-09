@@ -16,6 +16,13 @@ contract NoReplay {
   error IncorrectNetwork();
   // Custom error for if you try and send tokens to yourself
   error SameRecipient();
+  // Custom error for if this contract has expired
+  error ContractExpired();
+
+  // Expiry time is set during constructor
+  uint256 private deployTime;
+  /// @dev Modifiable contract life
+  uint256 constant internal CONTRACT_LIFE = 180 days;
 
   // Max PoW difficulty is 2^64
   uint256 constant internal MAX_DIFFICULTY = 2**64;
@@ -45,15 +52,24 @@ contract NoReplay {
     _;
   }
 
+  // Reverts all transactions that happen after contract expiry
+  /// @dev This prevents replay attacks if difficulty one day exceeds 2**64 
+  modifier contractNotExpired {
+    if(block.timestamp > deployTime + CONTRACT_LIFE){
+      revert ContractExpired();
+    }
+    _;
+  }
+
   /// @dev ETH forwarding
 
-  function sendEtherOnPoW(address recipient) public payable onlyPoW returns (bool) {
+  function sendEtherOnPoW(address recipient) public payable onlyPoW contractNotExpired returns (bool) {
     _checkRecipient(recipient);
     _sendEther(recipient);
     return true;
   }
 
-  function sendEtherOnPoS(address recipient) public payable onlyPoS returns (bool) {
+  function sendEtherOnPoS(address recipient) public payable onlyPoS contractNotExpired returns (bool) {
     _checkRecipient(recipient);
     _sendEther(recipient);
     return true;
@@ -61,13 +77,13 @@ contract NoReplay {
 
   /// @dev ERC20 forwarding
 
-  function sendERC20OnPoW(address token, address recipient, uint256 amount) public payable onlyPoW returns (bool) {
+  function sendERC20OnPoW(address token, address recipient, uint256 amount) public payable onlyPoW contractNotExpired returns (bool) {
     _checkRecipient(recipient);
     _sendERC20(token, recipient, amount);
     return true;
   }
 
-  function sendERC20OnPoS(address token, address recipient, uint256 amount) public payable onlyPoS returns (bool) {
+  function sendERC20OnPoS(address token, address recipient, uint256 amount) public payable onlyPoS contractNotExpired returns (bool) {
     _checkRecipient(recipient);
     _sendERC20(token, recipient, amount);
     return true;
@@ -75,13 +91,13 @@ contract NoReplay {
 
   /// @dev ERC721 forwarding
 
-  function sendERC721OnPoW(address token, address recipient, uint256 tokenId) public onlyPoW returns (bool) {
+  function sendERC721OnPoW(address token, address recipient, uint256 tokenId) public onlyPoW contractNotExpired returns (bool) {
     _checkRecipient(recipient);
     _sendERC721(token, recipient, tokenId);
     return true;
   }
 
-  function sendERC721OnPoS(address token, address recipient, uint256 tokenId) public onlyPoS returns (bool) {
+  function sendERC721OnPoS(address token, address recipient, uint256 tokenId) public onlyPoS contractNotExpired returns (bool) {
     _checkRecipient(recipient);
     _sendERC721(token, recipient, tokenId);
     return true;
@@ -89,13 +105,13 @@ contract NoReplay {
 
   /// @dev ERC1155 forwarding
 
-  function sendERC1155OnPoW(address token, address recipient, uint256 tokenId, uint256 amount, bytes calldata data) public onlyPoW returns (bool) {
+  function sendERC1155OnPoW(address token, address recipient, uint256 tokenId, uint256 amount, bytes calldata data) public onlyPoW contractNotExpired returns (bool) {
     _checkRecipient(recipient);
     _sendERC1155(token, recipient, tokenId, amount, data);
     return true;
   }
 
-  function sendERC1155OnPoS(address token, address recipient, uint256 tokenId, uint256 amount, bytes calldata data) public onlyPoS returns (bool) {
+  function sendERC1155OnPoS(address token, address recipient, uint256 tokenId, uint256 amount, bytes calldata data) public onlyPoS contractNotExpired returns (bool) {
     _checkRecipient(recipient);
     _sendERC1155(token, recipient, tokenId, amount, data);
     return true;
@@ -135,5 +151,7 @@ contract NoReplay {
     for (uint256 i = 0; i < length; ++i) { result[i] = value; }
   }
 
-  constructor(){}
+  constructor(){
+    deployTime = block.timestamp;
+  }
 }

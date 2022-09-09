@@ -5,7 +5,11 @@ import { ERC20 } from "solmate/tokens/ERC20.sol";
 import { ERC721 } from "solmate/tokens/ERC721.sol";
 import { ERC1155 } from "solmate/tokens/ERC1155.sol";
 
-/// @title NoReplay uses OPcode 0x44 checks to protect against replay attacks
+/// @title The NoReplay contract uses OPcode 0x44 checks to protect against replay attacks
+/// @dev You can deploy your own instance so you don't have to trust an existing deployed one!
+/// @author @pcaversaccio (network detector PoC)
+/// @author @0xArbiter (contract + ETH)
+/// @author @amxx (ERC20, ERC721, ERC1155, optimisations)
 contract NoReplay {
 
   // Custom error returned on one network but not the other

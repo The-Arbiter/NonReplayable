@@ -13,9 +13,10 @@ contract ERC721Mock is ERC721{
   constructor() ERC721("Mock", "MOCK"){}
 
   /// @notice Mint a token to the given address
-  function safeMint(address to) public payable {
+  function safeMint(address to) public payable returns(uint256){
     _safeMint(to, totalSupply);
     ++totalSupply;
+    return totalSupply-1;
   }
 
   /// @notice Burn the given token

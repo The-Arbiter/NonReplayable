@@ -3,23 +3,23 @@ pragma solidity ^0.8.15;
 
 import "forge-std/Test.sol";
 
-import { ERC20 } from "solmate/tokens/ERC20.sol";
-import { ERC721 } from "solmate/tokens/ERC721.sol";
-import { ERC1155 } from "solmate/tokens/ERC1155.sol";
 import { NoReplay } from "src/NoReplay.sol";
 import {ERC20Mock} from "./mocks/ERC20Mock.sol";
 import {ERC721Mock} from "./mocks/ERC721Mock.sol";
+import {ERC1155Mock} from "./mocks/ERC1155Mock.sol";
 
 contract NoReplayTest is Test {
 
     NoReplay noReplay;
     ERC20Mock mockERC20Token;
     ERC721Mock mockERC721Token;
+    ERC1155Mock mockERC1155Token;
 
     function setUp() external {
         noReplay = new NoReplay();
         mockERC20Token = new ERC20Mock();
         mockERC721Token = new ERC721Mock();
+        mockERC1155Token = new ERC1155Mock();
     }
 
     function assumptions(address someAddress) internal{
@@ -50,11 +50,9 @@ contract NoReplayTest is Test {
 
         // Set some difficulty under 2^64
         vm.difficulty(difficulty);       
-
-        // Send ETH on PoW
+        
         noReplay.sendEtherOnPoW{value: amount}(recipient);
-
-        // Make sure all ETH is forwarded
+        
         if(address(recipient).balance-startingBalance != amount){
             console2.log(address(recipient).balance);
             revert("The recipient didn't get forwarded the ETH!");
@@ -82,11 +80,9 @@ contract NoReplayTest is Test {
 
         // Set some difficulty over 2^64
         vm.difficulty(2**64+1);       
-
-        // Send ETH on PoW
+        
         noReplay.sendEtherOnPoS{value: amount}(recipient);
-
-        // Make sure all ETH is forwarded
+        
         if(address(recipient).balance-startingBalance != amount){
             console2.log(address(recipient).balance);
             revert("The recipient didn't get forwarded the ETH!");
@@ -117,10 +113,8 @@ contract NoReplayTest is Test {
         // Set some difficulty under 2^64
         vm.difficulty(difficulty);       
 
-        // Send ETH on PoW
         noReplay.sendERC20OnPoW(address(mockERC20Token),recipient,amount);
-
-        // Make sure all ERC20 is forwarded
+        
         if(mockERC20Token.getBalance(recipient)-startingBalance != amount){
             console2.log(mockERC20Token.getBalance(recipient));
             revert("The recipient didn't get forwarded the ERC20!");
@@ -132,6 +126,7 @@ contract NoReplayTest is Test {
         vm.expectRevert(abi.encodeWithSignature("IncorrectNetwork()"));
         noReplay.sendERC20OnPoW(address(mockERC20Token),recipient,amount);
     }
+
 
     // Test that ERC20 stuff works for PoS
     function testERC20ForwardingPoS(address sender, address recipient, uint256 amount, uint64 difficulty) external {
@@ -151,10 +146,8 @@ contract NoReplayTest is Test {
         // Set some difficulty over 2^64
         vm.difficulty(2**64 + 1);       
 
-        // Send ETH on PoW
         noReplay.sendERC20OnPoS(address(mockERC20Token),recipient,amount);
 
-        /// Make sure all ERC20 is forwarded
         if(mockERC20Token.getBalance(recipient)-startingBalance != amount){
             console2.log(mockERC20Token.getBalance(recipient));
             revert("The recipient didn't get forwarded the ERC20!");
@@ -166,6 +159,7 @@ contract NoReplayTest is Test {
         vm.expectRevert(abi.encodeWithSignature("IncorrectNetwork()"));
         noReplay.sendERC20OnPoS(address(mockERC20Token),recipient,amount);
     }
+
 
     // Test that ERC721 stuff works for PoW
     function testERC721ForwardingPoW(address sender, address recipient, uint256 amount, uint64 difficulty) external {
@@ -183,11 +177,9 @@ contract NoReplayTest is Test {
 
         // Set some difficulty under 2^64
         vm.difficulty(difficulty);       
-
-        // Send ETH on PoW
+        
         noReplay.sendERC721OnPoW(address(mockERC721Token), recipient, tokenId);
 
-        // Make sure all ERC20 is forwarded
         if(mockERC721Token.balanceOf(recipient)-startingBalance != 1){
             console2.log(mockERC721Token.balanceOf(recipient));
             revert("The recipient didn't get forwarded the ERC721!");
@@ -200,37 +192,67 @@ contract NoReplayTest is Test {
         noReplay.sendERC721OnPoW(address(mockERC721Token), recipient, tokenId);
     }
 
-    // Test that ERC721 stuff works for PoS
-    function testERC721ForwardingPoS(address sender, address recipient, uint256 amount, uint64 difficulty) external {
+
+    // Test that ERC1155 stuff works for PoW
+    function testERC1155ForwardingPoW(address sender, address recipient, uint256 amount, uint64 difficulty) external {
 
         assumptions(sender);
         assumptions(recipient);
         vm.assume(sender!=recipient);
 
-        uint256 startingBalance = mockERC721Token.balanceOf(recipient);
+        uint256 startingBalance = mockERC1155Token.balanceOf(recipient,1);
 
         // Hoax as some address
         vm.startPrank(sender);
-        uint256 tokenId = mockERC721Token.safeMint(sender);
-        mockERC721Token.approve(address(noReplay),tokenId);
+        uint256 tokenId = mockERC1155Token.mint(sender,1);
+        mockERC1155Token.setApprovalForAll(address(noReplay),true);
 
         // Set some difficulty under 2^64
+        vm.difficulty(difficulty);       
+        
+        noReplay.sendERC1155OnPoW(address(mockERC1155Token), recipient, 1,1, "");
+        
+        if(mockERC1155Token.balanceOf(recipient,1)-startingBalance != 1){
+            revert("The recipient didn't get forwarded the ERC1155!");
+        }
+
+        // Make sure that it reverts
+        vm.difficulty(2**64 + 1);
+        vm.deal(sender, amount);
+        vm.expectRevert(abi.encodeWithSignature("IncorrectNetwork()"));
+        noReplay.sendERC1155OnPoW(address(mockERC1155Token), recipient, 1,1, "");
+    }
+
+
+    // Test that ERC1155 stuff works for PoS
+    function testERC1155ForwardingPoS(address sender, address recipient, uint256 amount, uint64 difficulty) external {
+
+        assumptions(sender);
+        assumptions(recipient);
+        vm.assume(sender!=recipient);
+
+        uint256 startingBalance = mockERC1155Token.balanceOf(recipient,1);
+
+        // Hoax as some address
+        vm.startPrank(sender);
+        uint256 tokenId = mockERC1155Token.mint(sender,1);
+        mockERC1155Token.setApprovalForAll(address(noReplay),true);
+
+        // Set some difficulty over 2^64
         vm.difficulty(2**64+1);       
 
-        // Send ETH on PoW
-        noReplay.sendERC721OnPoS(address(mockERC721Token), recipient, tokenId);
+        noReplay.sendERC1155OnPoS(address(mockERC1155Token), recipient, 1,1, "");
 
-        // Make sure all ERC20 is forwarded
-        if(mockERC721Token.balanceOf(recipient)-startingBalance != 1){
-            console2.log(mockERC721Token.balanceOf(recipient));
-            revert("The recipient didn't get forwarded the ERC721!");
+        if(mockERC1155Token.balanceOf(recipient,1)-startingBalance != 1){
+            revert("The recipient didn't get forwarded the ERC1155!");
         }
 
         // Make sure that it reverts
         vm.difficulty(difficulty);
         vm.deal(sender, amount);
         vm.expectRevert(abi.encodeWithSignature("IncorrectNetwork()"));
-        noReplay.sendERC721OnPoS(address(mockERC721Token), recipient, tokenId);
+        noReplay.sendERC1155OnPoS(address(mockERC1155Token), recipient, 1,1, "");
     }
+
        
 }

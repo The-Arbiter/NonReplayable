@@ -14,6 +14,8 @@ contract NoReplay {
 
   // Custom error returned on one network but not the other
   error IncorrectNetwork();
+  // Custom error for if you try and send tokens to yourself
+  error SameRecipient();
 
   // Max PoW difficulty is 2^64
   uint256 constant internal MAX_DIFFICULTY = 2**64;
@@ -43,99 +45,68 @@ contract NoReplay {
     _;
   }
 
-  /// @dev ETHER transfers - just forwards the balance
+  /// @dev ETH forwarding
 
   function sendEtherOnPoW(address recipient) public payable onlyPoW returns (bool) {
+    _checkRecipient(recipient);
     _sendEther(recipient);
     return true;
   }
 
   function sendEtherOnPoS(address recipient) public payable onlyPoS returns (bool) {
+    _checkRecipient(recipient);
     _sendEther(recipient);
     return true;
   }
 
-  /// @dev ERC20 forwarding - forwards the balance
+  /// @dev ERC20 forwarding
 
   function sendERC20OnPoW(address token, address recipient, uint256 amount) public payable onlyPoW returns (bool) {
+    _checkRecipient(recipient);
     _sendERC20(token, recipient, amount);
     return true;
   }
 
   function sendERC20OnPoS(address token, address recipient, uint256 amount) public payable onlyPoS returns (bool) {
+    _checkRecipient(recipient);
     _sendERC20(token, recipient, amount);
     return true;
   }
-  
-  function sendAllERC20OnPoW(address token, address recipient) public onlyPoW returns (bool) {
-    _sendERC20(token, recipient, ERC20(token).balanceOf(msg.sender));
-    return true;
-  }
 
-  function sendAllERC20OnPoS(address token, address recipient) public onlyPoS returns (bool) {
-    _sendERC20(token, recipient, ERC20(token).balanceOf(msg.sender));
-    return true;
-  }
-
-  /// @dev ERC721 forwarding - same concept
+  /// @dev ERC721 forwarding
 
   function sendERC721OnPoW(address token, address recipient, uint256 tokenId) public onlyPoW returns (bool) {
+    _checkRecipient(recipient);
     _sendERC721(token, recipient, tokenId);
     return true;
   }
 
   function sendERC721OnPoS(address token, address recipient, uint256 tokenId) public onlyPoS returns (bool) {
+    _checkRecipient(recipient);
     _sendERC721(token, recipient, tokenId);
     return true;
   }
 
-  /// @dev ERC1155 forwarding - same concept
+  /// @dev ERC1155 forwarding
 
   function sendERC1155OnPoW(address token, address recipient, uint256 tokenId, uint256 amount, bytes calldata data) public onlyPoW returns (bool) {
+    _checkRecipient(recipient);
     _sendERC1155(token, recipient, tokenId, amount, data);
     return true;
   }
 
   function sendERC1155OnPoS(address token, address recipient, uint256 tokenId, uint256 amount, bytes calldata data) public onlyPoS returns (bool) {
+    _checkRecipient(recipient);
     _sendERC1155(token, recipient, tokenId, amount, data);
-    return true;
-  }
-
-  function sendAllERC1155OnPoW(address token, address recipient, uint256 tokenId, bytes calldata data) public onlyPoW returns (bool) {
-    _sendERC1155(token, recipient, tokenId, ERC1155(token).balanceOf(recipient, tokenId), data);
-    return true;
-  }
-
-  function sendAllERC1155OnPoS(address token, address recipient, uint256 tokenId, bytes calldata data) public onlyPoS returns (bool) {
-    _sendERC1155(token, recipient, tokenId, ERC1155(token).balanceOf(recipient, tokenId), data);
-    return true;
-  }
-
-  function sendERC1155BatchOnPoW(address token, address recipient, uint256[] calldata tokenIds, uint256[] calldata amounts, bytes calldata data) public onlyPoW returns (bool) {
-    _sendERC1155Batch(token, recipient, tokenIds, amounts, data);
-    return true;
-  }
-
-  function sendERC1155BatchOnPoS(address token, address recipient, uint256[] calldata tokenIds, uint256[] calldata amounts, bytes calldata data) public onlyPoS returns (bool) {
-    _sendERC1155Batch(token, recipient, tokenIds, amounts, data);
-    return true;
-  }
-
-  function sendAllERC1155BatchOnPoW(address token, address recipient, uint256[] calldata tokenIds, bytes calldata data) public onlyPoW returns (bool) {
-    _sendERC1155Batch(token, recipient, tokenIds, ERC1155(token).balanceOfBatch(_arrayFill(msg.sender, tokenIds.length), tokenIds), data);
-    return true;
-  }
-
-  function sendAllERC1155BatchOnPoS(address token, address recipient, uint256[] calldata tokenIds, bytes calldata data) public onlyPoS returns (bool) {
-    _sendERC1155Batch(token, recipient, tokenIds, ERC1155(token).balanceOfBatch(_arrayFill(msg.sender, tokenIds.length), tokenIds), data);
     return true;
   }
 
   // Helpers
 
   /// @dev Sending anything to yourself does not cause a significant enough state desynchronisation to prevent replay attacks.
-  function _recipientIsNotSender(address recipient) private view returns (bool){
-    return (msg.sender != recipient);
+  function _checkRecipient(address recipient) private view returns (bool){
+    if(msg.sender == recipient) revert SameRecipient();
+    return true;
   }
 
   function _sendEther(address recipient) private {

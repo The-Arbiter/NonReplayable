@@ -204,7 +204,7 @@ contract NoReplayTest is Test {
 
         // Hoax as some address
         vm.startPrank(sender);
-        uint256 tokenId = mockERC1155Token.mint(sender,1);
+        mockERC1155Token.mint(sender,1);
         mockERC1155Token.setApprovalForAll(address(noReplay),true);
 
         // Set some difficulty under 2^64
@@ -235,7 +235,7 @@ contract NoReplayTest is Test {
 
         // Hoax as some address
         vm.startPrank(sender);
-        uint256 tokenId = mockERC1155Token.mint(sender,1);
+        mockERC1155Token.mint(sender,1);
         mockERC1155Token.setApprovalForAll(address(noReplay),true);
 
         // Set some difficulty over 2^64
@@ -252,6 +252,23 @@ contract NoReplayTest is Test {
         vm.deal(sender, amount);
         vm.expectRevert(abi.encodeWithSignature("IncorrectNetwork()"));
         noReplay.sendERC1155OnPoS(address(mockERC1155Token), recipient, 1,1, "");
+    }
+
+    // Make sure that check recipient reverts when the sender is the recipient
+    function testCheckRecipient(address sender, uint256 amount, uint64 difficulty) external {
+
+        assumptions(sender);
+
+        // Hoax as some address
+        vm.deal(sender, amount);
+        vm.startPrank(sender);
+
+        // Set some difficulty under 2^64
+        vm.difficulty(difficulty);       
+        
+        vm.expectRevert(abi.encodeWithSignature("SameRecipient()"));
+        noReplay.sendEtherOnPoW{value: amount}(sender);
+
     }
 
        

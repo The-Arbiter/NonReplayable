@@ -1,5 +1,14 @@
 # NonReplayable
 
+*Please note that the `main` branch includes the following changes as compared to the `Legacy` branch:*
+- Removed `all` and `batch` processing functions to minimise deployment cost
+- Added a contract timeout after which all calls revert
+- Added a check to ensure that `sender` and `recipient` are not the same
+
+The impetus behind these changes was to make this code more friendly for independent deployments and make it harder to make mistakes, as well as patching some small potential replay protection holes.
+
+**The `Legacy` branch contains a copy of this codebase sans the above changes.**
+
 ## What is this?
 
 I think that PoW ETH is going to keep a `chainId` of 1.

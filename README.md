@@ -1,5 +1,7 @@
 # NonReplayable
 
+### *Deprecated as ETH PoW fork now uses a different chainID (hooray!)*
+
 *Please note that the `main` branch includes the following changes as compared to the `Legacy` branch:*
 - Removed `all` and `batch` processing functions to minimise deployment cost
 - Added a contract timeout after which all calls revert
